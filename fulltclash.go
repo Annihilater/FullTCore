@@ -1,7 +1,5 @@
 package main
 
-//#include <stdlib.h>
-import "C"
 import (
 	"context"
 	"crypto/sha256"
@@ -60,6 +58,7 @@ func main() {
 	portslice := strings.Split(proxyport, "|")
 	pslicelen := len(portslice)
 	fmt.Println("接收到的端口数量:", pslicelen)
+
 	if pslicelen < 1 {
 		fmt.Printf("No proxy port available")
 		return
@@ -421,9 +420,18 @@ func handleUDPToRemote(packet constant.UDPPacket, pc constant.PacketConn, metada
 }
 func handleTCPConn(connCtx constant.ConnContext, index int) {
 	metadata := connCtx.Metadata()
+	if rawcfgs[index].Proxy == nil {
+		fmt.Println("Null pointer reference. Connection break down!")
+		return
+	}
 	proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
 	if err != nil {
 		fmt.Printf("error: %s \n", err.Error())
+		return
+	}
+	if proxy == nil {
+		fmt.Println("Null pointer reference. Connection break down!")
+		return
 	}
 	fmt.Printf("request incoming from %s to %s, using %s , index: %d\n", metadata.SourceAddress(), metadata.RemoteAddress(), proxy.Name(), index)
 	ctx, cancel := context.WithTimeout(context.Background(), constant.DefaultTCPTimeout)
